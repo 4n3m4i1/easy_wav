@@ -25,7 +25,7 @@ int main(int argc, char **argv){
 
     output_wav(&myfile, "coolname.wav", &sampled_sin, 16, NS, FS, 1);
 
-    printf("Chunk ID: 0x%08X\n", myfile.ChunkID);
+    print_wave_header(&myfile);
 
     
 

@@ -3,6 +3,7 @@
 
 #include <inttypes.h>
 #include <stdio.h>
+#include <malloc.h>
 
 enum AUDIO_FMTS {
     FMT_PCM = 1
@@ -51,10 +52,45 @@ struct WAVE_Data {
     void        **data_arr;
 };
 
+
+void print_wave_header(struct WAVE_Header *wav){
+    if(wav){
+        printf("Chunk ID:\t%c%c%c%c\t(0x%08X)\n", 
+                                        *((char *)&wav->ChunkID),
+                                        *((char *)&wav->ChunkID + 1u),
+                                        *((char *)&wav->ChunkID + 2u),
+                                        *((char *)&wav->ChunkID + 3u),
+                                        wav->ChunkID);
+        printf("Chunk Size:\t%lu bytes\n", wav->ChunkSize);
+        printf("Format:\t\t%c%c%c%c\t(0x%08X)\n", 
+                                        *((char *)&wav->Format),
+                                        *((char *)&wav->Format + 1u),
+                                        *((char *)&wav->Format + 2u),
+                                        *((char *)&wav->Format + 3u), 
+                                        wav->Format);
+        printf("Audio Format:\t%s\n", (wav->AudioFormat == FMT_PCM) ? "PCM" : "???");
+        printf("Channels:\t%u\n", wav->NumChannels);
+        printf("Sample Rate:\t%lu Hz\n", wav->SampleRate);
+        printf("Byte Rate:\t%lu bytes/sec\n", wav->ByteRate);
+        printf("Bits/Sample:\t%u\n", wav->BitsPerSample);
+
+        printf("Data Size:\t%lu bytes\n", wav->Subchunk2Size);
+
+        uint32_t num_samples = wav->Subchunk2Size / wav->BitsPerSample;
+        uint32_t samples_per_chan = num_samples / wav->NumChannels;
+
+        printf("Num Samples:\t%lu\n", num_samples);
+        printf("Samples/Chan:\t%lu\n", samples_per_chan);
+        
+        
+    }
+}
+
 // Assumption made that L R L R interleaving is done for 2 channels
+// Dsize is bits, dlen is number of datatype_len entries. u16 -> dsize = 16, dlen = 1
 int output_wav(struct WAVE_Header *wav, char *fname, void *data, uint16_t dsize, uint32_t dlen, uint32_t fs, uint16_t channels){
     if((dsize != 8) && (dsize != 16)) return -1;
-    if(!data) return -2;
+    if(!data || channels > 2) return -2;
 
     wav->ChunkID        = STD_CHUNKID_;
     wav->Format         = STD_FMT_;
@@ -79,22 +115,29 @@ int output_wav(struct WAVE_Header *wav, char *fname, void *data, uint16_t dsize,
     FILE *fp;
     fp = fopen(fname, "wb");
 
-    printf("Size of Wave Headr: %u\n", sizeof(struct WAVE_Header));
-
-    fwrite(wav, sizeof(struct WAVE_Header), 1, fp);
+    fwrite(wav, (sizeof(struct WAVE_Header) - sizeof(void *)), 1, fp);
 
     fwrite(data, dlen, (dsize >> 3), fp);
-//
-    //for(uint32_t n = 0; n < (dlen * channels); ++n){
-    //    fwrite(data, dlen, (dsize >> 3), fp);
-    //    //for(uint16_t m = 0; m < channels); ++m){
-    //    //    fwrite
-    //    //}
-    //}
-//
+
     fclose(fp);
 
     return 0;
+}
+
+
+int read_wav(struct WAVE_Header *wav, char *fname){
+    if(!wav || !fname) return -2;
+    FILE *fp;
+    fp = fopen(fname, "rb");
+    fread(wav, (sizeof(struct WAVE_Header) - sizeof(void *)), 1, fp);
+
+    
+
+    fclose(fp);
+}
+
+int free_read_data(struct WAVE_Header *wav){
+    free(wav->data);
 }
 
 
