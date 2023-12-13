@@ -2,12 +2,13 @@
 #include <stdio.h>
 #include <math.h>
 
-/// Simple mono sin wave out
+/// Basic AM
 
 #define RUNTIME     5
 #define FS          44100
 #define NS          (RUNTIME * FS)
 #define SIG_F       500
+#define MOD_F       80
 
 int main(int argc, char **argv){
     int16_t sampled_sin[NS];
@@ -16,7 +17,9 @@ int main(int argc, char **argv){
     double radf = 2.0 * M_PI * (double)SIG_F;
     double sampf = (double)FS;
     for(uint32_t n = 0; n < NS; ++n){
-        sampled_sin[n] = (int16_t) (((double)(INT16_MAX / 2))*sin(radf * ((double)n / sampf)));
+        double sigval = sin(radf * ((double)n / sampf));
+        double modval = sin(2.0 * M_PI * (double)MOD_F * ((double)n/sampf));
+        sampled_sin[n] = (int16_t) (((double)(INT16_MAX / 2)) * sigval * modval);
         //fprintf(fp, "%d\n", sampled_sin[n]);
     }
     //fclose(fp);
