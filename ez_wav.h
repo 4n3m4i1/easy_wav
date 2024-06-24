@@ -76,7 +76,7 @@ void print_wave_header(struct WAVE_Header *wav){
 
         printf("Data Size:\t%lu bytes\n", wav->Subchunk2Size);
 
-        uint32_t num_samples = wav->Subchunk2Size / wav->BitsPerSample;
+        uint32_t num_samples = wav->Subchunk2Size / (wav->BitsPerSample >> 3);
         uint32_t samples_per_chan = num_samples / wav->NumChannels;
 
         printf("Num Samples:\t%lu\n", num_samples);
